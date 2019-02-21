@@ -8,6 +8,7 @@ const constantsSchema = require('./schema/constants');
 const { createLoggerComponent } = require('../components/logger');
 
 const ChainModule = require('../modules/chain');
+const NetworkModule = require('../modules/network');
 
 // Private __private used because private keyword is restricted
 const __private = {
@@ -83,7 +84,7 @@ class Application {
 		label,
 		genesisBlock,
 		constants = {},
-		config = { components: { logger: null } }
+		config = { components: { logger: null }, modules: { network: {} } }
 	) {
 		if (typeof label === 'function') {
 			label = label.call();
@@ -122,6 +123,8 @@ class Application {
 			genesisBlock: this.genesisBlock,
 			constants: this.constants,
 		});
+
+		this.registerModule(NetworkModule, this.config.modules.network);
 	}
 
 	/**
