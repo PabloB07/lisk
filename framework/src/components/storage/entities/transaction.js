@@ -121,7 +121,6 @@ const BaseEntity = require('./base_entity');
  * Transaction Filters
  * @typedef {Object} filters.Transaction
  */
-
 const assetAttributesMap = {
 	0: ['asset.data'],
 	1: ['asset.signature.publicKey'],
@@ -151,15 +150,6 @@ const sqlFiles = {
 	isPersisted: 'transactions/is_persisted.sql',
 	count: 'transactions/count.sql',
 	count_all: 'transactions/count_all.sql',
-	create: 'transactions/create.sql',
-	createType0: 'transactions/create_type_0.sql',
-	createType1: 'transactions/create_type_1.sql',
-	createType2: 'transactions/create_type_2.sql',
-	createType3: 'transactions/create_type_3.sql',
-	createType4: 'transactions/create_type_4.sql',
-	createType5: 'transactions/create_type_5.sql',
-	createType6: 'transactions/create_type_6.sql',
-	createType7: 'transactions/create_type_7.sql',
 };
 
 // eslint-disable-next-line no-unused-vars
@@ -344,205 +334,35 @@ class Transaction extends BaseEntity {
 	 * @param {Object} [tx] - Transaction object
 	 * @return {*}
 	 */
+	// eslint-disable-next-line class-methods-use-this,no-unused-vars
 	create(data, _options, tx) {
-		let transactions = _.cloneDeep(data);
-
-		if (!Array.isArray(transactions)) {
-			transactions = [transactions];
-		}
-
-		transactions.forEach(t => {
-			t.signatures = t.signatures ? t.signatures.join() : null;
-			t.amount = t.amount.toString();
-			t.fee = t.fee.toString();
-			t.recipientId = t.recipientId || null;
-		});
-
-		const trsFields = [
-			'id',
-			'blockId',
-			'type',
-			'timestamp',
-			'senderPublicKey',
-			'requesterPublicKey',
-			'senderId',
-			'recipientId',
-			'amount',
-			'fee',
-			'signature',
-			'signSignature',
-			'signatures',
-		];
-
-		const createSet = this.getValuesSet(transactions, trsFields);
-
-		const task = dbTx => {
-			const batch = [];
-
-			batch.push(
-				this.adapter.executeFile(
-					this.SQLs.create,
-					{ values: createSet, attributes: trsFields },
-					{ expectedResultCount: 0 },
-					dbTx
-				)
-			);
-
-			const groupedTransactions = _.groupBy(transactions, 'type');
-
-			Object.keys(groupedTransactions).forEach(type => {
-				batch.push(
-					this._createSubTransactions(
-						parseInt(type),
-						groupedTransactions[type],
-						dbTx
-					)
-				);
-			});
-
-			return dbTx.batch(batch).then(() => true);
-		};
-
-		if (tx) {
-			return task(tx);
-		}
-
-		return this.begin('transactions:create', task);
-	}
-
-	_createSubTransactions(type, transactions, tx) {
-		let fields;
-		let values;
-
-		switch (type) {
-			case 0:
-				fields = ['transactionId', 'data'];
-				values = transactions
-					.filter(transaction => transaction.asset && transaction.asset.data)
-					.map(transaction => ({
-						transactionId: transaction.id,
-						data: Buffer.from(transaction.asset.data, 'utf8'),
-					}));
-				break;
-			case 1:
-				fields = ['transactionId', 'publicKey'];
-				values = transactions.map(transaction => ({
-					transactionId: transaction.id,
-					publicKey: Buffer.from(transaction.asset.signature.publicKey, 'hex'),
-				}));
-				break;
-			case 2:
-				fields = ['transactionId', 'username'];
-				values = transactions.map(transaction => ({
-					transactionId: transaction.id,
-					username: transaction.asset.delegate.username,
-				}));
-				break;
-			case 3:
-				fields = ['transactionId', 'votes'];
-				values = transactions.map(transaction => ({
-					votes: Array.isArray(transaction.asset.votes)
-						? transaction.asset.votes.join()
-						: null,
-					transactionId: transaction.id,
-				}));
-				break;
-			case 4:
-				fields = ['transactionId', 'min', 'lifetime', 'keysgroup'];
-				values = transactions.map(transaction => ({
-					min: transaction.asset.multisignature.min,
-					lifetime: transaction.asset.multisignature.lifetime,
-					keysgroup: transaction.asset.multisignature.keysgroup.join(),
-					transactionId: transaction.id,
-				}));
-				break;
-			case 5:
-				fields = [
-					'transactionId',
-					'type',
-					'name',
-					'description',
-					'tags',
-					'link',
-					'icon',
-					'category',
-				];
-				values = transactions.map(transaction => ({
-					type: transaction.asset.dapp.type,
-					name: transaction.asset.dapp.name,
-					description: transaction.asset.dapp.description || null,
-					tags: transaction.asset.dapp.tags || null,
-					link: transaction.asset.dapp.link || null,
-					icon: transaction.asset.dapp.icon || null,
-					category: transaction.asset.dapp.category,
-					transactionId: transaction.id,
-				}));
-				break;
-			case 6:
-				fields = ['transactionId', 'dappId'];
-				values = transactions.map(transaction => ({
-					dappId: transaction.asset.inTransfer.dappId,
-					transactionId: transaction.id,
-				}));
-				break;
-			case 7:
-				fields = ['transactionId', 'dappId', 'outTransactionId'];
-				values = transactions.map(transaction => ({
-					dappId: transaction.asset.outTransfer.dappId,
-					outTransactionId: transaction.asset.outTransfer.transactionId,
-					transactionId: transaction.id,
-				}));
-				break;
-			default:
-				throw new Error(`Unsupported transaction type: ${type}`);
-		}
-
-		if (values.length < 1) {
-			return Promise.resolve(null);
-		}
-
-		return this.adapter.executeFile(
-			this.SQLs[`createType${type}`],
-			{ values: this.getValuesSet(values, fields, { useRawObject: true }) },
-			{ expectedResultCount: 0 },
-			tx
-		);
+		throw new NonSupportedOperationError();
 	}
 
 	/**
-	 * Update the records based on given condition
+	 * Update object record
 	 *
-	 * @param {filters.Account} [filters]
-	 * @param {Object} data
-	 * @param {Object} [options]
-	 * @param {Object} [tx] - Transaction object
-	 * @return {*}
+	 * @override
+	 * @throws {NonSupportedOperationError}
 	 */
-	// eslint-disable-next-line class-methods-use-this,no-unused-vars
-	update(filters, data, options, tx) {
-		throw new NonSupportedOperationError(
-			'Updating transaction is not supported.'
-		);
+	// eslint-disable-next-line class-methods-use-this
+	update() {
+		throw new NonSupportedOperationError();
 	}
 
 	/**
-	 * Update one record based on the condition given
+	 * Update object record
 	 *
-	 * @param {filters.Account} filters
-	 * @param {Object} data
-	 * @param {Object} [options]
-	 * @param {Object} [tx] - Transaction object
-	 * @return {*}
+	 * @override
+	 * @throws {NonSupportedOperationError}
 	 */
-	// eslint-disable-next-line class-methods-use-this,no-unused-vars
-	updateOne(filters, data, options, tx) {
-		throw new NonSupportedOperationError(
-			'Updating transaction is not supported.'
-		);
+	// eslint-disable-next-line class-methods-use-this
+	updateOne() {
+		throw new NonSupportedOperationError();
 	}
 
 	/**
-	 * Delete operation is not supported for Transactions
+	 * Delete object record
 	 *
 	 * @override
 	 * @throws {NonSupportedOperationError}
@@ -631,7 +451,11 @@ class Transaction extends BaseEntity {
 	}
 
 	static _formatTransactionResult(row, extended) {
-		const transaction = extended ? { asset: {} } : {};
+		const transaction = extended
+			? {
+					asset: {},
+				}
+			: {};
 
 		Object.keys(row).forEach(k => {
 			if (!k.match(/^asset./)) {
