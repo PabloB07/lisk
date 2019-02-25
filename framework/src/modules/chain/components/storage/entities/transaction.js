@@ -134,7 +134,7 @@ const sqlFiles = {
 	createType7: 'transactions/create_type_7.sql',
 };
 
-class Transaction extends TransactionEntity {
+class ChainTransaction extends TransactionEntity {
 	/**
 	 * Constructor
 	 * @param {BaseAdapter} adapter - Adapter to retrive the data from
@@ -333,4 +333,4 @@ class Transaction extends TransactionEntity {
 	}
 }
 
-module.exports = Transaction;
+module.exports = ChainTransaction;
