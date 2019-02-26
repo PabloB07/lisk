@@ -50,17 +50,10 @@ module.exports = class Network {
 
 			let p2pConfig = {
 				...this.options,
-
+				nodeInfo: system.headers,
 			};
 
-			this.p2p = new P2P({
-				blacklistedPeers: options.blacklistedPeers || [],
-				connectTimeout: options.connectTimeout === undefined ?
-					5000 : options.connectTimeout,
-				seedPeers: options.seedPeers || [],
-				wsEngine: options.wsEngine || 'ws',
-				nodeInfo: system.headers,
-			});
+			this.p2p = new P2P(p2pConfig);
 
 			await this.p2p.start();
 		} catch (error) {
