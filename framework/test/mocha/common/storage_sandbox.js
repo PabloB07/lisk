@@ -107,7 +107,13 @@ class StorageSandbox extends Storage {
 
 	_createDB() {
 		return new Promise((resolve, reject) => {
+			// eslint-disable-next-line
+			console.log(`%%%%%%%%%% createdb: ${this.options.database}`);
 			child_process.exec(`createdb ${this.options.database}`, error => {
+				// eslint-disable-next-line
+				console.log(
+					`%%%%%%%%%% createdb error "${this.options.database}" : ${error}`
+				);
 				if (error) {
 					return reject(error);
 				}

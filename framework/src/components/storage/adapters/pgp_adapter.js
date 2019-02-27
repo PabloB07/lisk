@@ -92,6 +92,13 @@ class PgpAdapter extends BaseAdapter {
 
 		// this.pgp.end();
 
+		// eslint-disable-next-line no-console
+		console.log('%%%%%%%%% - storage debug ', {
+			database: this.options.database,
+			user: this.options.user,
+			password: this.options.password,
+		});
+
 		this.db = this.pgp(this.options);
 
 		// As of the nature of pg-promise the connection is acquired either a query is started to execute.
