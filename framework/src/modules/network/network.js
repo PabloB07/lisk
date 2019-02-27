@@ -1,5 +1,7 @@
 const P2P = require('@liskhq/lisk-p2p').P2P;
 const { createSystemComponent } = require('../../components/system');
+const { createStorageComponent } = require('../../components/storage');
+const { createLoggerComponent } = require('../../components/logger');
 
 /**
  * Network Module
@@ -48,12 +50,21 @@ module.exports = class Network {
 			this.logger.debug('Initiating system...');
 			const system = createSystemComponent(systemConfig, this.logger, storage);
 
-			let p2pConfig = {
+			const p2pConfig = {
 				...this.options,
-				nodeInfo: system.headers,
+				nodeInfo: {
+					...system.headers,
+					wsPort: this.options.nodeInfo.wsPort,
+				},
 			};
 
 			this.p2p = new P2P(p2pConfig);
+
+			this._handleUpdateNodeInfo = (event) => {
+				this.p2p.applyNodeInfo(event.data);
+			};
+
+			this.channel.subscribe('chain:updateNodeInfo', this._handleUpdateNodeInfo);
 
 			await this.p2p.start();
 		} catch (error) {
@@ -66,6 +77,6 @@ module.exports = class Network {
 	}
 
 	async cleanup() {
-
+		// TODO: Unsubscribe 'chain:updateNodeInfo' from channel.
 	}
 };

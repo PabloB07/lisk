@@ -80,6 +80,10 @@ module.exports = class Chain {
 			'system'
 		);
 
+		const handleNodeInfoUpdate = (headers) => {
+			this.channel.publish('chain:updateNodeInfo', headers);
+		};
+
 		this.logger = createLoggerComponent(loggerConfig);
 		const dbLogger =
 			storageConfig.logFileName &&
@@ -116,7 +120,12 @@ module.exports = class Chain {
 
 			// System
 			this.logger.debug('Initiating system...');
-			const system = createSystemComponent(systemConfig, this.logger, storage);
+			const system = createSystemComponent(
+				systemConfig,
+				this.logger,
+				storage,
+				handleNodeInfoUpdate
+			);
 
 			if (!this.options.config) {
 				throw Error('Failed to assign nethash from genesis block');

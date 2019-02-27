@@ -34,7 +34,9 @@ module.exports = class ChainModule extends BaseModule {
 	}
 
 	get events() {
-		return [];
+		return [
+			'updateNodeInfo'
+		];
 	}
 
 	get actions() {
